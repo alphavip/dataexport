@@ -41,7 +41,7 @@ class TableInfo:
 
     def writesvrdata(self):
         svrcsvname = self.infoPath + self.infoName + ".csv"
-        f = open(svrcsvname, "wt")
+        f = open(svrcsvname, mode='wt', encoding='utf-8')
         for col in self.columns:
             if col.svrFlag == 0:
                 continue
@@ -92,16 +92,16 @@ class TableInfo:
 
             self.data.append(line)
     def writecppsource(self):
-        chhname = self.cppPath + self.infoName + ".h"
-        chhredefine = "_" + self.infoName + "_H_"
-        f = open(chhname, "wt")
-        f.write("#ifndef " + chhredefine + '\n')
-        f.write("#define _ItemInfo_H_\n")
+        chhname = self.cppPath + self.infoName + '.h'
+        chhredefine = '_' + self.infoName + '_H_'
+        f = open(chhname, mode='wt', encoding='utf-8')
+        f.write('#ifndef ' + chhredefine + '\n')
+        f.write('#define _' + self.infoName + '_H_\n')
         f.write('\n\n')
         f.write('#include "base/CsvParser.h"\n')
         f.write('#include "InfoMgr.h"\n')
         f.write('\n')
-        f.write('namespace info\n{\n\nstruct ItemInfo\n{\n')
+        f.write('namespace info\n{\n\nstruct ' + self.infoName + '\n{\n')
 
         for coldesc in self.columns:
             if coldesc.svrFlag == 0:
@@ -113,7 +113,7 @@ class TableInfo:
         f.write('\tvirtual bool Check() { return true; }\n')
         f.write('};\n')
         f.write('\n')
-        f.write('typedef InfoMgr<' + self.infoName + '> ' + self.infoName +'Mgr;\n')
+        f.write('typedef InfoMgr<' + self.infoName + '> ' + self.infoName + 'Mgr;\n')
         f.write('\n')
         f.write('}\n')
         f.write('\n\n')
@@ -122,16 +122,16 @@ class TableInfo:
         f.close()
 
         cppname = self.cppPath + self.infoName + '.cpp'
-        f = open(cppname, "wt")
+        f = open(cppname, mode='wt', encoding='utf-8')
 
         f.write('#include "Config.h"\n')
-        f.write('#include "ItemInfo.h"\n')
+        f.write('#include "' + self.infoName + '.h"\n')
         f.write('\n\n')
 
         f.write('namespace info\n{\n')
         f.write('\n')
 
-        f.write('int32_t ItemInfo::Load(const base::CsvParser::Row& row)\n{\n')
+        f.write('int32_t ' + self.infoName + '::Load(const base::CsvParser::Row& row)\n{\n')
 
         realIndex = 0
         for coldesc in self.columns:
