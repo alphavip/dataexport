@@ -2,6 +2,20 @@
 
 import sys
 import xlrd
+from colorama import init, Fore, Back, Style
+
+varType = {'uint', 'int', 'string'}
+
+def GetCPPVarType(type):
+    if type == 'uint':
+        return 'uint32_t'
+    elif type == 'int':
+        return 'int32_t'
+    elif type == 'string':
+        return 'std::string'
+    else:
+        exit(-1)
+    
 
 
 class ColumnDesc:
@@ -10,6 +24,7 @@ class ColumnDesc:
         self.cliFlag = 0
         self.colName = ""
         self.varType = ""
+        self.dataVarType = ''
         self.varName = ""
 
     def __str__(self):
@@ -38,6 +53,15 @@ class TableInfo:
         self.sheetName = sname
         self.columns = []
         self.data = []
+    
+    def loadingmsg(self):
+        print(Fore.GREEN + self.excelName + ' : ' + self.sheetName + '......')
+        
+    def errormsg(self, msg):
+        print(Fore.RED + 'Error:' + msg)
+        
+    def loadedmsg(self):
+        print(Fore.GREEN + 'Export Success!')
 
     def writesvrdata(self):
         svrcsvname = self.infoPath + self.infoName + ".csv"
@@ -66,18 +90,26 @@ class TableInfo:
         try:
             table = data.sheet_by_name(self.sheetName)
         except xlrd.XLRDError as error:
-            print(error)
+            self.errormsg(error)
             data.release_resources()
-            return
+            return False
+        
+        if table.nrows < 5:
+            self.errormsg('row num is less than 5')
+            return False
 
         for colIndex in range(table.ncols):
             cols = table.col_values(colIndex, 0, 5)
             coldesc = ColumnDesc()
-            coldesc.cliFlag = int(cols[0])
-            coldesc.svrFlag = int(cols[1])
-            coldesc.colName = cols[2]
+            coldesc.colName = cols[0]
+            coldesc.cliFlag = int(cols[1])
+            coldesc.svrFlag = int(cols[2])
             coldesc.varName = cols[3]
-            coldesc.varType = cols[4]
+            coldesc.dataVarType = cols[4]
+            if coldesc.dataVarType not in varType:
+                self.errormsg(coldesc.colName + ', ' + coldesc.dataVarType + 'type not surpport ')
+                return False
+            coldesc.varType = GetCPPVarType(coldesc.dataVarType)
             self.columns.append(coldesc)
         for rowIndex in range(5, table.nrows):
             rows = table.row_values(rowIndex)
@@ -88,9 +120,9 @@ class TableInfo:
                     line.append(int(rows[i]))
                 else:
                     line.append(rows[i])
-
-
             self.data.append(line)
+        return True
+            
     def writecppsource(self):
         chhname = self.cppPath + self.infoName + '.h'
         chhredefine = '_' + self.infoName + '_H_'
@@ -152,13 +184,18 @@ class TableInfo:
 
 
 if __name__ == '__main__':
+    init(autoreset=True)
     if len(sys.argv) < 6:
-        print("infoexport excel_namae sheet_name info_name infopath c++sourcepath")
+        print(Fore.GREEN + "infoexport excel_namae sheet_name info_name infopath c++sourcepath")
         exit(-1)
+    
     ti = TableInfo(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
-    ti.loadfromexcel()
+    ti.loadingmsg()
+    if not ti.loadfromexcel():
+        exit(-1)
     ti.writesvrdata()
     ti.writecppsource()
+    ti.loadedmsg()
     #ti.print()
     #print(ti.data)
 

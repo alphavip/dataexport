@@ -11,7 +11,7 @@ namespace info
 struct ItemInfo
 {
 	uint32_t id;
-	uint8_t type;
+	int32_t type;
 
 	int32_t Load(const base::CsvParser::Row & row);
 	virtual bool Check() { return true; }
