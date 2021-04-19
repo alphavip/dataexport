@@ -6,14 +6,28 @@
 //
 //
 
+#include <stdint.h>
+#include <map>
+#include <unordered_map>
+
 #ifndef _InfoMgr_H_
 #define _InfoMgr_H_
 
-#include "base/CsvParser.h"
 
 
 namespace info
 {
+
+struct InfoHandle
+{
+    mutable int32_t index = -1;
+    uint32_t infoId = 0;
+
+    InfoHandle(int32_t i, uint32_t id) : index(i), infoId(id)
+    {
+
+    }
+};
 template <typename T>
 class InfoMgr
 {
@@ -47,19 +61,35 @@ public:
         
         return 0;
     }
-    const T* Get(uint32_t id)
+    const T* GetById(uint32_t id)
     {
-        if(id >= this->m_infos.size())
-            return nullptr;
-        
-        return this->m_infos[id];
+        auto it = this->m_index.find(handle.infoId);
+        if (it != this->m_index.end())
+        {
+            return this->m_infos[it->second];
+        }
+
+        return nullptr;
+
+    }
+
+    const T* GetByHandle(const InfoHandle& handle)
+    {
+        if(size_t(handle.index) < this->m_infos.size() && this->m_infos[handle.index]->id == handle.infoId)
+            return this->m_infos[handle.index];
+        auto it = this->m_index.find(handle.infoId);
+        if (it != this->m_index.end())
+        {
+            handle.index = it->second;
+            return this->m_infos[it->second];
+        }
+        return nullptr;
     }
     void Add(const T* t)
     {
-        if(this->m_infos.size() <= t->id)
-            this->m_infos.resize(t->id * 2);
-        assert(this->m_infos[t->id] == nullptr);
-        this->m_infos[t->id] = t;
+        int32_t index = this->m_infos.size();
+        this->m_infos.push_back(t);
+        this->m_index[t->id] = index;
     }
     
 public:
@@ -75,7 +105,8 @@ public:
     const std::vector<const T*>& GetAllInfo() const { return this->m_infos; }
     
 protected:
-    std::vector<const T*> m_infos;
+    std::unordered_map<uint32_t, int32_t> m_index;//还是不用id作为vector下标了，如果id很随意，uint32_max个null还是很可观的
+    std::vector<const T*> m_infos;//所有的配置
 };
     
   
